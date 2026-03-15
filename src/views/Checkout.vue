@@ -1,194 +1,220 @@
 <template>
-  <div class="cart-wrapper">
-    <div class="cart-header-bar">
-      <h2>我的购物车 <span>({{ cartData.length }} 件商品)</span></h2>
-      <el-button link type="danger" @click="clearCart" v-if="cartData.length > 0">
-        <el-icon><Delete /></el-icon> 清空购物车
-      </el-button>
-    </div>
+  <div class="checkout-wrapper">
+    <div class="checkout-container">
+      <h1 class="page-title">确认订单 <span>Checkout</span></h1>
 
-    <div class="empty-cart" v-if="cartData.length === 0">
-      <img src="https://illustrations.popsy.co/amber/surreal-hourglass.svg" class="empty-img" alt="Empty Cart" />
-      <h3>购物车空空如也</h3>
-      <p>快去挑选一些心仪的极客装备吧！</p>
-      <el-button type="primary" class="go-shop-btn" size="large" @click="router.push('/home')">
-        去逛逛 <el-icon class="ml-2"><ArrowRight /></el-icon>
-      </el-button>
-    </div>
-
-    <div class="cart-content" v-else>
-      <div class="cart-list">
-        <transition-group name="list" tag="div">
-          <div class="cart-item-card" v-for="item in cartData" :key="item.id">
-            <img :src="item.product.image" class="item-img" />
-
-            <div class="item-info">
-              <h4 class="item-name" @click="router.push(`/product/${item.product.id}`)">{{ item.product.name }}</h4>
-              <p class="item-specs"><el-tag size="small" type="info">官方标配</el-tag></p>
-              <div class="item-price">¥{{ item.product.price }}</div>
+      <div class="checkout-content">
+        <div class="main-col">
+          <section class="checkout-section">
+            <h3>1. 选择收货地址</h3>
+            <div class="address-list" v-if="addresses.length > 0">
+              <div
+                v-for="addr in addresses"
+                :key="addr.id"
+                :class="['address-card', { active: selectedAddressId === addr.id }]"
+                @click="selectedAddressId = addr.id"
+              >
+                <div class="addr-header">
+                  <span class="name">{{ addr.receiver }}</span>
+                  <span class="phone">{{ addr.phone }}</span>
+                  <el-tag v-if="addr.is_default" size="small" type="success" effect="plain">默认</el-tag>
+                </div>
+                <p class="addr-detail">{{ addr.province }}{{ addr.city }}{{ addr.district }}{{ addr.detail }}</p>
+                <div class="check-icon" v-if="selectedAddressId === addr.id">
+                  <el-icon><Check /></el-icon>
+                </div>
+              </div>
             </div>
-
-            <div class="item-actions">
-              <el-input-number
-                v-model="item.nums"
-                :min="1" :max="99"
-                size="small"
-                @change="updateNums(item)"
-                class="modern-input-number"
-              />
-              <el-button circle type="danger" plain class="delete-btn" @click="deleteItem(item.id)">
-                <el-icon><Close /></el-icon>
-              </el-button>
+            <div v-else class="no-address">
+              <p>您还没有收货地址，请先前往个人中心添加。</p>
+              <el-button type="primary" plain @click="router.push('/user')">去添加地址</el-button>
             </div>
-          </div>
-        </transition-group>
-      </div>
+          </section>
 
-      <div class="cart-summary-wrapper">
-        <div class="cart-summary-card">
-          <h3>订单摘要</h3>
-
-          <div class="summary-row">
-            <span>商品总价 ({{ cartData.length }}件)</span>
-            <span>¥{{ totalAmount.toFixed(2) }}</span>
-          </div>
-          <div class="summary-row">
-            <span>预计运费</span>
-            <span class="free-shipping">免运费</span>
-          </div>
-
-          <el-divider border-style="dashed" />
-
-          <div class="summary-total">
-            <span>合计</span>
-            <span class="total-price">¥{{ totalAmount.toFixed(2) }}</span>
-          </div>
-
-          <div class="promo-code">
-            <el-input placeholder="输入优惠码" v-model="promoCode">
-              <template #append><el-button>兑换</el-button></template>
-            </el-input>
-          </div>
-
-          <el-button type="danger" class="checkout-btn" size="large" @click="submitOrder">
-            去结算
-          </el-button>
+          <section class="checkout-section">
+            <h3>2. 确认商品清单</h3>
+            <div class="order-items">
+              <div class="item-row" v-for="item in cartItems" :key="item.id">
+                <img :src="item.product.image" class="item-img" />
+                <div class="item-info">
+                  <h4>{{ item.product.name }}</h4>
+                  <p class="qty">数量: x{{ item.nums }}</p>
+                </div>
+                <div class="item-price">¥{{ (item.product.price * item.nums).toFixed(2) }}</div>
+              </div>
+            </div>
+          </section>
         </div>
+
+        <aside class="summary-col">
+          <div class="sticky-summary">
+            <h3>订单汇总</h3>
+            <div class="summary-row">
+              <span>商品小计</span>
+              <span>¥{{ totalAmount.toFixed(2) }}</span>
+            </div>
+            <div class="summary-row">
+              <span>运费</span>
+              <span class="free">免运费</span>
+            </div>
+
+            <el-divider />
+
+            <div class="total-row">
+              <span>应付总额</span>
+              <span class="total-price">¥{{ totalAmount.toFixed(2) }}</span>
+            </div>
+
+            <el-input
+              v-model="postScript"
+              type="textarea"
+              placeholder="给卖家留言（选填）"
+              class="remark-input"
+            />
+
+            <el-button
+              type="danger"
+              class="submit-btn"
+              :disabled="!selectedAddressId || cartItems.length === 0"
+              :loading="isSubmitting"
+              @click="handlePayment"
+            >
+              模拟支付并下单
+            </el-button>
+          </div>
+        </aside>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import request from '../api/index'
 
 const router = useRouter()
-const cartData = ref([])
-const promoCode = ref('')
+const addresses = ref([])
+const cartItems = ref([])
+const selectedAddressId = ref(null)
+const postScript = ref('')
+const isSubmitting = ref(false)
 
-const getCart = async () => {
+const fetchCart = async () => {
   try {
     const res = await request.get('cart/')
-    cartData.value = res.data
+    cartItems.value = res.data
   } catch (err) {
     ElMessage.error('获取购物车失败')
   }
 }
 
-const totalAmount = computed(() => {
-  return cartData.value.reduce((total, item) => {
-    if (item.product && item.product.price) {
-      return total + (item.product.price * item.nums)
+const fetchAddresses = async () => {
+  try {
+    const res = await request.get('addresses/')
+    addresses.value = res.data
+    const defaultAddr = addresses.value.find(a => a.is_default)
+    if (defaultAddr) {
+      selectedAddressId.value = defaultAddr.id
+    } else if (addresses.value.length > 0) {
+      selectedAddressId.value = addresses.value[0].id
     }
-    return total
-  }, 0)
+  } catch (err) {
+    ElMessage.error('获取地址失败')
+  }
+}
+
+const totalAmount = computed(() => {
+  return cartItems.value.reduce((total, item) => total + (item.product.price * item.nums), 0)
 })
 
-const updateNums = async (row) => {
+const handlePayment = async () => {
+  if (!selectedAddressId.value) {
+    ElMessage.warning('请选择收货地址')
+    return
+  }
+
+  isSubmitting.value = true
   try {
-    await request.patch(`cart/${row.id}/`, { nums: row.nums })
+    // 🌟 1. 找到当前选中的完整地址对象
+    const addr = addresses.value.find(a => a.id === selectedAddressId.value)
+
+    // 🌟 2. 完美映射后端 Order 模型需要的字段快照
+    const orderData = {
+      signer_name: addr.receiver,             // 将 receiver 映射给 signer_name
+      signer_mobile: addr.phone,              // 将 phone 映射给 signer_mobile
+      address: `${addr.province}${addr.city}${addr.district}${addr.detail}`, // 拼接完整地址
+      post_script: postScript.value,
+      order_mount: totalAmount.value
+    }
+
+    await request.post('orders/', orderData)
+
+    ElMessage.success('🎉 支付成功！订单已生成')
+    router.push('/orders')
+
   } catch (err) {
-    ElMessage.error('修改数量失败')
+    console.error('下单报错详情:', err.response?.data)
+
+    let errorMsg = '下单失败，请检查后端接口。'
+    if (err.response && err.response.data) {
+      const data = err.response.data
+      if (typeof data === 'object') {
+        const firstKey = Object.keys(data)[0]
+        if (firstKey) {
+          const msg = Array.isArray(data[firstKey]) ? data[firstKey][0] : data[firstKey]
+          errorMsg = `后端拒绝 (${firstKey}): ${msg}`
+        }
+      }
+    }
+    ElMessage.error(errorMsg)
+  } finally {
+    isSubmitting.value = false
   }
 }
 
-const deleteItem = async (id) => {
-  try {
-    await request.delete(`cart/${id}/`)
-    // 优雅的前端删除，触发 transition 动画，无需重新请求整页
-    cartData.value = cartData.value.filter(item => item.id !== id)
-    ElMessage.success('商品已移出购物车')
-  } catch (err) {
-    ElMessage.error('删除失败')
-  }
-}
-
-const clearCart = () => {
-  ElMessageBox.confirm('确定要清空购物车吗？', '提示', { type: 'warning' }).then(async () => {
-    // 真实业务中后端应提供批量删除接口，此处模拟前端循环删除或提示
-    ElMessage.success('清空功能需后端配合，暂以逐个删除演示')
-  }).catch(() => {})
-}
-
-const submitOrder = () => {
-  router.push('/checkout')
-}
-
-onMounted(getCart)
+onMounted(() => {
+  fetchCart()
+  fetchAddresses()
+})
 </script>
 
 <style scoped>
-.cart-wrapper { max-width: 1200px; margin: 40px auto; padding: 0 20px; font-family: 'Inter', sans-serif; min-height: 70vh; }
-.cart-header-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
-.cart-header-bar h2 { margin: 0; font-size: 28px; color: #0f172a; font-weight: 800; }
-.cart-header-bar span { font-size: 16px; color: #64748b; font-weight: 400; }
-
-/* 空状态 */
-.empty-cart { text-align: center; padding: 60px 0; }
-.empty-img { width: 250px; margin-bottom: 20px; opacity: 0.9; }
-.empty-cart h3 { font-size: 24px; color: #1e293b; margin-bottom: 10px; }
-.empty-cart p { color: #64748b; margin-bottom: 30px; }
-.go-shop-btn { border-radius: 30px; padding: 20px 40px; font-size: 16px; }
-
-/* 核心布局 */
-.cart-content { display: flex; gap: 40px; align-items: flex-start; }
-.cart-list { flex: 1; }
-.cart-summary-wrapper { width: 340px; position: sticky; top: 100px; } /* 吸顶效果 */
-
-/* 左侧卡片 */
-.cart-item-card { display: flex; align-items: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 20px; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-.cart-item-card:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transform: translateY(-2px); }
-.item-img { width: 100px; height: 100px; object-fit: contain; background: #f8fafc; border-radius: 12px; padding: 10px; margin-right: 20px; }
+/* 保持原样极简风格 */
+.checkout-wrapper { padding: 40px 0; min-height: 100vh; background: #f8fafc; font-family: 'Inter', sans-serif; }
+.checkout-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.page-title { font-size: 28px; font-weight: 800; color: #1e293b; margin-bottom: 30px; }
+.page-title span { color: #94a3b8; font-weight: 400; font-size: 18px; margin-left: 10px; }
+.checkout-content { display: flex; gap: 40px; align-items: flex-start; }
+.main-col { flex: 1; display: flex; flex-direction: column; gap: 30px; }
+.checkout-section { background: #fff; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; }
+.checkout-section h3 { margin: 0 0 20px 0; font-size: 18px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
+.address-list { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.address-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; cursor: pointer; position: relative; transition: 0.3s; }
+.address-card:hover { border-color: #93c5fd; }
+.address-card.active { border-color: #3b82f6; background: #eff6ff; }
+.addr-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.addr-header .name { font-weight: 700; color: #1e293b; }
+.addr-header .phone { color: #64748b; font-size: 14px; }
+.addr-detail { color: #475569; font-size: 14px; line-height: 1.5; margin: 0; }
+.check-icon { position: absolute; right: -1px; bottom: -1px; background: #3b82f6; color: #fff; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 12px 0 12px 0; }
+.no-address { text-align: center; padding: 20px 0; color: #64748b; }
+.item-row { display: flex; align-items: center; padding: 15px 0; border-bottom: 1px dashed #e2e8f0; }
+.item-row:last-child { border-bottom: none; }
+.item-img { width: 60px; height: 60px; object-fit: contain; border-radius: 8px; border: 1px solid #f1f5f9; margin-right: 20px; }
 .item-info { flex: 1; }
-.item-name { margin: 0 0 8px 0; font-size: 16px; color: #0f172a; cursor: pointer; transition: 0.2s; }
-.item-name:hover { color: #2563eb; }
-.item-specs { margin: 0 0 10px 0; }
-.item-price { font-size: 18px; font-weight: 800; color: #ef4444; }
-.item-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 20px; }
-.delete-btn { border: none; font-size: 18px; transition: 0.3s; }
-.delete-btn:hover { transform: rotate(90deg) scale(1.1); background: #fee2e2; }
-
-/* 列表动画 */
-.list-enter-active, .list-leave-active { transition: all 0.5s ease; }
-.list-enter-from, .list-leave-to { opacity: 0; transform: translateX(-30px); }
-
-/* 右侧结算卡片 */
-.cart-summary-card { background: #f8fafc; border-radius: 20px; padding: 30px; border: 1px solid #e2e8f0; }
-.cart-summary-card h3 { margin: 0 0 20px 0; font-size: 20px; color: #0f172a; }
-.summary-row { display: flex; justify-content: space-between; margin-bottom: 15px; color: #475569; font-size: 15px; }
-.free-shipping { color: #10b981; font-weight: 600; }
-.summary-total { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
-.summary-total span:first-child { font-size: 18px; font-weight: 600; color: #0f172a; }
-.total-price { font-size: 28px; font-weight: 800; color: #ef4444; }
-.promo-code { margin-bottom: 25px; }
-.checkout-btn { width: 100%; border-radius: 12px; font-size: 18px; font-weight: 600; padding: 25px 0; box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3); transition: 0.3s; }
-.checkout-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 25px -5px rgba(239, 68, 68, 0.4); }
-
-@media (max-width: 900px) {
-  .cart-content { flex-direction: column; }
-  .cart-summary-wrapper { width: 100%; position: static; }
-}
+.item-info h4 { margin: 0 0 5px 0; font-size: 15px; color: #1e293b; }
+.item-info .qty { margin: 0; color: #64748b; font-size: 14px; }
+.item-price { font-weight: 700; color: #0f172a; font-size: 16px; }
+.summary-col { width: 340px; }
+.sticky-summary { background: #fff; padding: 30px; border-radius: 16px; border: 1px solid #e2e8f0; position: sticky; top: 100px; box-shadow: 0 10px 25px rgba(0,0,0,0.02); }
+.sticky-summary h3 { margin: 0 0 20px 0; font-size: 18px; color: #0f172a; }
+.summary-row { display: flex; justify-content: space-between; margin-bottom: 15px; color: #475569; font-size: 14px; }
+.free { color: #10b981; font-weight: 600; }
+.total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.total-row span:first-child { font-weight: 700; color: #1e293b; }
+.total-price { font-size: 24px; font-weight: 800; color: #ef4444; }
+.remark-input { margin-bottom: 20px; }
+.submit-btn { width: 100%; padding: 25px 0; font-size: 18px; font-weight: 800; border-radius: 12px; }
 </style>
