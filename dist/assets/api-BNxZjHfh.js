@@ -1,1 +1,0 @@
-import{t as e}from"./axios-DTImDTt7.js";var t=e.create({baseURL:`http://127.0.0.1:8000/api/`,timeout:5e3});t.interceptors.request.use(e=>{let t=localStorage.getItem(`access_token`);return t&&(e.headers.Authorization=`Bearer ${t}`),e});export{t};
