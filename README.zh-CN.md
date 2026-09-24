@@ -1,6 +1,7 @@
 # Geek Mall Frontend
 
 *大学课程商城项目的 Vue 3 网页客户端。*
+
 ![Vue 3](https://img.shields.io/badge/Vue.js-3-4FC08D?logo=vuedotjs&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-Web%20Client-646CFF?logo=vite&logoColor=white) ![Status](https://img.shields.io/badge/Status-Course%20Project-586069)
 
 **导航：**[状态](#项目状态) · [本地运行](#本地运行) · [仓库内容](#仓库内容)
