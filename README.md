@@ -1,12 +1,11 @@
 # Geek Mall Frontend
 
 *The Vue 3 web client for a university mall coursework build.*
-
-
-[English](README.md) | [简体中文](README.zh-CN.md)
+![Vue 3](https://img.shields.io/badge/Vue.js-3-4FC08D?logo=vuedotjs&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-Web%20Client-646CFF?logo=vite&logoColor=white) ![Status](https://img.shields.io/badge/Status-Course%20Project-586069)
 
 **Guide:** [Status](#project-status) · [Start locally](#start-locally) · [Repository contents](#repository-contents)
 
+[English](README.md) | [简体中文](README.zh-CN.md)
 
 This repository contains the Vue 3 web frontend for the Geek Mall coursework project. It uses Vite, Element Plus, Pinia, Vue Router and Axios.
 
